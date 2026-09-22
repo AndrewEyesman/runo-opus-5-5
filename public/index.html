@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Runo</title>
+  <meta name="description" content="Runo: a quick card game for 2–4 friends, played live in the browser.">
+  <meta name="theme-color" content="#2A1638">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar" id="topbar" hidden>
+    <div class="topbar-left">
+      <span class="wordmark" aria-hidden="true">Runo</span>
+      <button class="room-chip" id="topbar-code" type="button" title="Copy invite link"></button>
+    </div>
+    <div class="topbar-right">
+      <span class="conn" id="conn" role="status"></span>
+      <button class="icon-btn" id="btn-panel" type="button" aria-controls="panel" aria-expanded="false">
+        <span>Table</span><span class="badge" id="chat-badge" hidden></span>
+      </button>
+      <button class="icon-btn" id="btn-rules-top" type="button">Rules</button>
+      <button class="icon-btn sound-toggle" type="button" aria-pressed="true">Sound on</button>
+      <button class="icon-btn danger" id="btn-leave" type="button">Leave</button>
+    </div>
+  </header>
+
+  <!-- Main menu -->
+  <main id="menu" class="menu" hidden>
+    <section class="menu-hero">
+      <h1 class="logo" aria-label="Runo">
+        <span class="logo-card c-red" aria-hidden="true">R</span>
+        <span class="logo-card c-yellow" aria-hidden="true">U</span>
+        <span class="logo-card c-green" aria-hidden="true">N</span>
+        <span class="logo-card c-blue" aria-hidden="true">O</span>
+      </h1>
+      <p class="tagline">Match a color or a number, empty your hand, and remember to shout before your last card.</p>
+    </section>
+
+    <section class="menu-actions panel-paper">
+      <p class="notice" id="menu-notice" role="alert" hidden></p>
+      <label class="field">
+        <span>Your name</span>
+        <input id="name" maxlength="20" autocomplete="nickname" spellcheck="false" placeholder="e.g. Ada">
+      </label>
+      <button class="btn primary big" id="btn-create" type="button">Create a room</button>
+      <form class="join-row" id="join-form">
+        <label class="field grow">
+          <span>Room code</span>
+          <input id="join-code" maxlength="6" autocomplete="off" spellcheck="false" placeholder="A1B2C3" inputmode="text" autocapitalize="characters">
+        </label>
+        <button class="btn" type="submit">Join</button>
+      </form>
+      <div class="menu-links">
+        <button class="link-btn" id="btn-rules-menu" type="button">How to play</button>
+        <button class="link-btn sound-toggle" type="button" aria-pressed="true">Sound on</button>
+      </div>
+    </section>
+
+    <section class="lobbies panel-paper" aria-labelledby="lobbies-title">
+      <div class="lobbies-head">
+        <h2 id="lobbies-title">Open rooms</h2>
+        <button class="btn small ghost" id="btn-refresh" type="button">Refresh</button>
+      </div>
+      <ul class="lobby-list" id="lobby-list" aria-live="polite"></ul>
+    </section>
+  </main>
+
+  <!-- In a room: lobby, table or results -->
+  <div id="room" class="room" hidden>
+    <main class="stage" id="stage"></main>
+    <aside class="panel" id="panel" aria-label="Players, log and chat">
+      <div class="panel-tabs" role="tablist">
+        <button role="tab" type="button" data-tab="players" aria-selected="true">Players</button>
+        <button role="tab" type="button" data-tab="log" aria-selected="false">Log</button>
+        <button role="tab" type="button" data-tab="chat" aria-selected="false">Chat <span class="badge" id="chat-badge-tab" hidden></span></button>
+        <button class="panel-close" id="btn-panel-close" type="button" aria-label="Close panel">Close</button>
+      </div>
+      <div class="panel-body" data-pane="players"><ul class="player-list" id="player-list"></ul></div>
+      <div class="panel-body" data-pane="log" hidden><ol class="log-list" id="log-list"></ol></div>
+      <div class="panel-body chat" data-pane="chat" hidden>
+        <ul class="chat-list" id="chat-list" aria-live="polite"></ul>
+        <form class="chat-form" id="chat-form">
+          <input id="chat-input" maxlength="240" autocomplete="off" placeholder="Say something" aria-label="Chat message">
+          <button class="btn small" type="submit">Send</button>
+        </form>
+      </div>
+    </aside>
+    <div class="scrim" id="scrim" hidden></div>
+  </div>
+
+  <div id="booting" class="booting">Shuffling…</div>
+
+  <!-- Dialogs -->
+  <dialog id="dlg-wild" class="dialog" aria-labelledby="wild-title">
+    <h2 id="wild-title">Pick the new color</h2>
+    <div class="swatches">
+      <button type="button" class="swatch c-red" data-color="red">Red</button>
+      <button type="button" class="swatch c-yellow" data-color="yellow">Yellow</button>
+      <button type="button" class="swatch c-green" data-color="green">Green</button>
+      <button type="button" class="swatch c-blue" data-color="blue">Blue</button>
+    </div>
+    <button type="button" class="btn ghost wide" data-close>Keep the card</button>
+  </dialog>
+
+  <dialog id="dlg-confirm" class="dialog" aria-labelledby="confirm-title">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-body"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn ghost" data-close>Cancel</button>
+      <button type="button" class="btn danger" id="confirm-ok"></button>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-rules" class="dialog rules" aria-labelledby="rules-title">
+    <h2 id="rules-title">How to play Runo</h2>
+    <div class="rules-body">
+      <p>Be the first to empty your hand. 2–4 players, 7 cards each. The first discard is always a number card, and a random player starts.</p>
+      <h3>On your turn, do one thing</h3>
+      <ul>
+        <li><b>Play</b> a card that matches the active color or the top card's number or symbol. Wild and Wild +4 can always be played, even if you have the color.</li>
+        <li><b>Draw</b> one card. Drawing always ends your turn, even if the new card would fit.</li>
+      </ul>
+      <h3>Action cards</h3>
+      <ul>
+        <li><b>Skip</b>: the next player misses a turn.</li>
+        <li><b>Reverse</b>: play changes direction. With 2 players it works like a Skip.</li>
+        <li><b>+2 / Wild +4</b>: the next player draws 2 or 4 and misses a turn. No stacking, no challenges.</li>
+        <li><b>Wild</b>: you choose the new color.</li>
+        <li>With 2 players, Skip, Reverse, +2 and +4 all give you another turn.</li>
+      </ul>
+      <h3>Calling RUNO!</h3>
+      <ul>
+        <li>When you're down to <b>one card</b>, on your turn, press <b>RUNO!</b> before you play it.</li>
+        <li>You can't call it early (with two cards) or on someone else's turn. Calling doesn't end your turn.</li>
+        <li>Forget, and your last card bounces back: you keep it, draw 2, and your turn ends.</li>
+        <li>Drawing any card clears your call.</li>
+      </ul>
+      <h3>Winning</h3>
+      <p>Empty your hand to win the round. A last action card still counts, so a final +2 still makes the next player draw. Each win adds to your tally for as long as the room lasts.</p>
+    </div>
+    <button type="button" class="btn primary wide" data-close>Got it</button>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="assertive"></div>
+</body>
+</html>
