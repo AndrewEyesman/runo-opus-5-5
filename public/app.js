@@ -565,7 +565,7 @@
     const face = FACE[card.value] ?? card.value;
     const isWild = card.color === null;
     return h(tag, {
-      class: `card ${size} c-${card.color || 'wild'} v-${card.value}`,
+      class: `card size-${size} c-${card.color || 'wild'} v-${card.value}`,
       'aria-label': cardLabel(card),
       ...props,
     },
@@ -632,7 +632,7 @@
           disabled: !myTurn,
           onclick: () => draw(),
           'aria-label': `Draw a card (${game.drawPileCount} left in the pile)`,
-        }, cardBack('pile'), h('span', { class: 'pile-count' }, `${game.drawPileCount} left`)),
+        }, cardBack('size-pile'), h('span', { class: 'pile-count' }, `${game.drawPileCount} left`)),
         h('div', { class: `discard active-${game.activeColor}` },
           cardEl(game.topCard, { size: 'pile' }),
           h('span', { class: 'pile-count' }, `${COLOR_NAMES[game.activeColor]} to play`))),
